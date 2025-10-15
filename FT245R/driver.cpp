@@ -1,38 +1,50 @@
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
+#include "FtdiDevice.h"
 #include "ReadFile.cpp"
 #include "WriteFile.cpp"
 
-// ---------------- Command-Line Test Driver ----------------
-int main(int argc, char** argv) {
-    if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <inputfile> <outputfile>\n";
+int main(int argc, char *argv[])
+{
+    if (argc != 3)
+    {
+        std::cerr << "Usage: " << argv[0] << " <inputFile> <outputFile>" << std::endl;
         return 1;
     }
 
     std::string inputFile = argv[1];
     std::string outputFile = argv[2];
 
-    // Two FTDI devices
-    FtdiDevice readDev("FTDI_Read");
-    FtdiDevice writeDev("FTDI_Write");
-    readDev.open();
-    writeDev.open();
+    // Instantiate two FTDI devices
+    FtdiDevice readDevice("FTDI_Read");
+    FtdiDevice writeDevice("FTDI_Write");
 
-    // Create reqfRead and reqfWrite objects
-    ReadFile reader(readDev);
-    WriteFile writer(writeDev);
+    // Open both devices
+    readDevice.open();
+    writeDevice.open();
 
-    // Read data from input file
+    // Create handler objects
+    ReadFile reader(readDevice);
+    WriteFile writer(writeDevice);
+
+    // Read from file
     std::vector<uint8_t> data = reader.readData(inputFile);
+    if (data.empty())
+    {
+        std::cerr << "No data read from file. Aborting." << std::endl;
+        readDevice.close();
+        writeDevice.close();
+        return 1;
+    }
 
-    // Write data to output file
+    // Write to file
     writer.writeData(outputFile, data);
 
-    readDev.close();
-    writeDev.close();
+    // Close devices
+    readDevice.close();
+    writeDevice.close();
 
-    std::cout << "[Driver] Test completed successfully.\n";
+    std::cout << "Driver Test completed successfully." << std::endl;
     return 0;
 }
