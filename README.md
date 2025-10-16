@@ -10,10 +10,14 @@ Run on x64
 cl *.c /Zi /EHsc /nologo /link amd64/ftd2xx.lib /out:controller.exe
 
 
-## Instructions to run ReadFile(reqfRead) and WriteFile(reqfWrite) via driver:
+## Instructions to run ReadFile(reqfRead) and WriteFile(reqfWrite) via driver (MacOS or Linux):
 
 ```bash
-> g++ -std=c++17 driver.cpp ReadFile.cpp WriteFile.cpp FtdiDevice.h
+> cd path/to/your/FTDI_Project/FT245R
 
-> ./a.out file1.txt <some_file_name>.txt
+> g++ -std=c++17 driver.cpp -o test_driver
+
+> echo "Dual-purpose oscilloscope test message" > input.txt
+
+> ./test_driver input.txt output.txt
 ```
