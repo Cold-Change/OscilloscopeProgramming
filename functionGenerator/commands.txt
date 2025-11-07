@@ -1,0 +1,30 @@
+# Sample command file for oscilloscope
+# Lines starting with # are comments
+
+# Start the oscilloscope
+START_SCOPE
+
+# Wait for 2 seconds
+WAIT seconds=2
+
+# Collect 10000 samples
+COLLECT_SAMPLES numberOfSamples=10000
+
+# Write collected data to file
+WRITE_FILE filename=output.dat
+
+# Wait another 3 seconds
+WAIT seconds=3
+
+# Collect more samples
+COLLECT_SAMPLES numberOfSamples=5000
+
+# Write to different file
+WRITE_FILE filename=output2.dat
+
+# Stop the oscilloscope
+STOP_SCOPE
+
+# You can also test the function generator
+# START_FGEN
+# STOP_FGEN
