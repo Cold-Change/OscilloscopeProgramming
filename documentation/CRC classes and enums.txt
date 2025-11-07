@@ -1,0 +1,92 @@
+### 1. **FtdiDevice****File:** `FtdiDevice.h` / `FtdiDevice.cpp`
+**Responsibility:** Manage FTDI device connection lifecycle
+**Associations:**- Used by scpReader (1:1) - "reads from"- Used by scpWriter (1:1) - "writes to"- Used by ReadFile (1:1) - "reads via"- Used by WriteFile (1:1) - "writes via"
+**Namespace:** (none - base device class)
+**Attributes:**- `id: string` - Device identifier- `openFlag: bool` - Connection status flag
+**Methods:**- `+FtdiDevice(id: string)`- `+~FtdiDevice()`- `+open(): bool`- `+close(): void`- `+isOpen(): bool`- `+getDeviceId(): string`
+---
+### 2. **scpReader****File:** `scpReader.h` / `scpReader.cpp`
+**Responsibility:** Read data from oscilloscope via FTDI device
+**Associations:**- Uses FtdiDevice (1:1) - "reads from device"- Used by scpController (1:1) - "provides data to"
+**Namespace:** `scp` (oscilloscope)
+**Attributes:**- `dev: FtdiDevice&` - Reference to FTDI device- `bufferSize: size_t` - Buffer size for reading
+**Methods:**- `+scpReader(device: FtdiDevice&)`- `+readData(filename: string): vector<uint8_t>`- `+readSamples(numberOfSamples: int): vector<uint8_t>`- `+getBufferSize(): size_t`- `+setBufferSize(size: size_t): void`
+---
+### 3. **scpWriter****File:** `scpWriter.h` / `scpWriter.cpp`
+**Responsibility:** Write data to device via FTDI
+**Associations:**- Uses FtdiDevice (1:1) - "writes to device"- Used by scpController (1:1) - "outputs data through"- Used by fgenController (1:1) - "outputs waveforms through"
+**Namespace:** `scp` (oscilloscope)
+**Attributes:**- `dev: FtdiDevice&` - Reference to FTDI device- `appendMode: bool` - Append mode flag
+**Methods:**- `+scpWriter(device: FtdiDevice&)`- `+writeData(filename: string, data: vector<uint8_t>): void`- `+appendData(filename: string, data: vector<uint8_t>): void`- `+setAppendMode(mode: bool): void`- `+getAppendMode(): bool`
+---
+### 4. **scpController****File:** `scpController.h` / `scpController.cpp`
+**Responsibility:** Orchestrate oscilloscope operations
+**Associations:**- Manages scpReader (1:1) - "reads data via"- Manages scpWriter (1:1) - "writes data via"- Configures scpConfig (1:1) - "configured by"- Used by scpCommand (0..*:1) - "executes commands on"- Used by scpCommandParser (1:1) - "parses commands for"
+**Namespace:** `scp` (oscilloscope)
+**Attributes:**- `reader: scpReader*` - Pointer to reader- `writer: scpWriter*` - Pointer to writer- `config: scpConfig*` - Pointer to configuration- `isRunning: bool` - Running state- `collectedSamples: int` - Number of collected samples- `dataBuffer: vector<uint8_t>` - Data buffer
+**Methods:**- `+scpController(reader: scpReader*, writer: scpWriter*, config: scpConfig*)`- `+start(): void`- `+stop(): void`- `+collectSamples(numberOfSamples: int): void`- `+isActive(): bool`- `+getStatus(): string`- `+getSamplesCollected(): int`- `+readFromFile(filename: string): void`- `+writeToFile(filename: string): void`
+---
+### 5. **scpConfig****File:** `scpConfig.h` / `scpConfig.cpp`
+**Responsibility:** Store and manage oscilloscope configuration
+**Associations:**- Used by scpController (1:1) - "configures"
+**Namespace:** `scp` (oscilloscope)
+**Attributes:**- `sampleRate: int` - Samples per second- `numberOfSamples: int` - Total samples to collect- `triggerLevel: double` - Trigger voltage level- `triggerEnabled: bool` - Enable/disable trigger- `inputFile: string` - Input file path- `outputFile: string` - Output file path
+**Methods:**- `+scpConfig()`- `+setSampleRate(rate: int): void`- `+setNumberOfSamples(n: int): void`- `+setTriggerLevel(level: double): void`- `+setTriggerEnabled(enabled: bool): void`- `+setInputFile(file: string): void`- `+setOutputFile(file: string): void`- `+getSampleRate(): int`- `+getNumberOfSamples(): int`- `+getTriggerLevel(): double`- `+isTriggerEnabled(): bool`- `+getInputFile(): string`- `+getOutputFile(): string`- `+loadFromFile(filename: string): bool`- `+saveToFile(filename: string): bool`- `+displayConfig(): void`
+---
+### 6. **fgenController****File:** `fgenController.h` / `fgenController.cpp`
+**Responsibility:** Control function generator operations
+**Associations:**- Manages scpWriter (1:1) - "outputs via"- Configures fgenConfig (1:1) - "configured by"- Uses scpWaveformGen (1:1) - "generates waveforms with"- Used by scpCommand (0..*:1) - "executes commands on"- Used by scpCommandParser (1:1) - "parses commands for"
+**Namespace:** `fgen` (function generator)
+**Attributes:**- `writer: scpWriter*` - Pointer to writer- `config: fgenConfig*` - Pointer to configuration- `waveGen: scpWaveformGen*` - Pointer to waveform generator- `isRunning: bool` - Running state
+**Methods:**- `+fgenController(writer: scpWriter*, config: fgenConfig*, waveGen: scpWaveformGen*)`- `+start(): void`- `+stop(): void`- `+generateAndOutput(): void`- `+isActive(): bool`- `+getStatus(): string`- `+setWaveType(typeStr: string): void`- `+setFrequency(freq: double): void`- `+setAmplitude(amp: double): void`- `+setOffset(offset: double): void`- `+setNumSamples(samples: int): void`- `+setOutputFile(filename: string): void`- `+displayConfig(): void`
+---
+### 7. **fgenConfig****File:** `fgenConfig.h` / `fgenConfig.cpp`
+**Responsibility:** Store function generator configuration
+**Associations:**- Used by fgenController (1:1) - "configures"- Used by scpWaveformGen (1:1) - "configures waveform generation"
+**Namespace:** `fgen` (function generator)
+**Attributes:**- `frequency: double` - Frequency in Hz- `amplitude: double` - Amplitude in volts- `offset: double` - DC offset in volts- `waveType: WaveType` - Type of waveform- `outputFile: string` - Output file path- `numSamples: int` - Number of samples per waveform
+**Methods:**- `+fgenConfig()`- `+setFrequency(freq: double): void`- `+setAmplitude(amp: double): void`- `+setOffset(off: double): void`- `+setWaveType(type: WaveType): void`- `+setOutputFile(file: string): void`- `+setNumSamples(samples: int): void`- `+getFrequency(): double`- `+getAmplitude(): double`- `+getOffset(): double`- `+getWaveType(): WaveType`- `+getOutputFile(): string`- `+getNumSamples(): int`- `+waveTypeToString(): string`- `+stringToWaveType(str: string): WaveType {static}`- `+loadFromFile(filename: string): bool`- `+saveToFile(filename: string): bool`- `+displayConfig(): void`
+---
+### 8. **scpWaveformGen****File:** `scpWaveformGen.h` / `scpWaveformGen.cpp`
+**Responsibility:** Generate various waveform types
+**Associations:**- Uses fgenConfig (1:1) - "configured by"- Used by fgenController (1:1) - "generates for"
+**Namespace:** `scp` (oscilloscope/shared)
+**Attributes:**- `config: fgenConfig*` - Pointer to configuration- `PI: double {static const}` - Mathematical constant
+**Methods:**- `+scpWaveformGen(config: fgenConfig*)`- `+generateSine(): vector<uint8_t>`- `+generateSquare(): vector<uint8_t>`- `+generateTriangle(): vector<uint8_t>`- `+generateSawtooth(): vector<uint8_t>`- `+generateWaveform(): vector<uint8_t>`- `-voltageToUint8(voltage: double): uint8_t`
+---
+### 9. **ReadFile****File:** `ReadFile.h` / `ReadFile.cpp`
+**Responsibility:** Read binary data from file system
+**Associations:**- Uses FtdiDevice (1:1) - "verifies device status"
+**Namespace:** (generic file I/O)
+**Attributes:**- `dev: FtdiDevice&` - Reference to FTDI device
+**Methods:**- `+ReadFile(device: FtdiDevice&)`- `+readData(filename: string): vector<uint8_t>`
+---
+### 10. **WriteFile****File:** `WriteFile.h` / `WriteFile.cpp`
+**Responsibility:** Write binary data to file system
+**Associations:**- Uses FtdiDevice (1:1) - "verifies device status"
+**Namespace:** (generic file I/O)
+**Attributes:**- `dev: FtdiDevice&` - Reference to FTDI device
+**Methods:**- `+WriteFile(device: FtdiDevice&)`- `+writeData(filename: string, data: vector<uint8_t>): void`
+---
+### 11. **scpCommand****File:** `scpCommand.h` / `scpCommand.cpp`
+**Responsibility:** Represent and execute single command
+**Associations:**- Parsed by scpCommandParser (1:0..*) - "creates"- Executes on scpController (0..*:1) - "controls"- Executes on fgenController (0..*:1) - "controls"
+**Namespace:** `scp` (oscilloscope)
+**Attributes:**- `type: CommandType` - Type of command- `parameters: map<string, string>` - Command parameters
+**Methods:**- `+scpCommand(type: CommandType)`- `+setParameter(key: string, value: string): void`- `+getParameter(key: string): string`- `+hasParameter(key: string): bool`- `+getType(): CommandType`- `+getTypeName(): string`- `+execute(scopeCtrl: scpController*, fgenCtrl: fgenController*): void`- `+validate(): bool`- `+stringToCommandType(str: string): CommandType {static}`- `+commandTypeToString(type: CommandType): string {static}`
+---
+### 12. **scpCommandParser****File:** `scpCommandParser.h` / `scpCommandParser.cpp`
+**Responsibility:** Parse and manage command sequences
+**Associations:**- Creates scpCommand (1:0..*) - "parses into"- Uses scpController (1:1) - "executes commands on"- Uses fgenController (1:1) - "executes commands on"
+**Namespace:** `scp` (oscilloscope)
+**Attributes:**- `commands: vector<scpCommand>` - List of parsed commands- `scopeController: scpController*` - Pointer to oscilloscope controller- `fgenController_: fgenController*` - Pointer to function generator controller
+**Methods:**- `+scpCommandParser(scopeCtrl: scpController*, fgenCtrl: fgenController*)`- `+parseCommandLine(argc: int, argv: char**): bool`- `+parseFile(filename: string): bool`- `+executeCommands(): void`- `+addCommand(cmd: scpCommand): void`- `+getCommands(): vector<scpCommand>`- `+clearCommands(): void`- `+displayCommands(): void`- `-parseCommandString(cmdStr: string): scpCommand`- `-parseParameters(cmd: scpCommand&, paramStr: string): void`
+---
+## Enumerations
+### **WaveType** (Enum)**File:** `fgenConfig.h`
+**Values:**- `SINE` - Sine wave- `SQUARE` - Square wave- `TRIANGLE` - Triangle wave- `SAWTOOTH` - Sawtooth wave
+**Used by:** fgenConfig, scpWaveformGen
+---
+### **CommandType** (Enum)**File:** `scpCommand.h`
+**Values:**- `START_SCOPE` - Start oscilloscope- `STOP_SCOPE` - Stop oscilloscope- `COLLECT_SAMPLES` - Collect samples- `READ_FILE` - Read file- `WRITE_FILE` - Write file- `START_FGEN` - Start function generator- `STOP_FGEN` - Stop function generator- `GENERATE_WAVEFORM` - Generate waveform- `SET_WAVE_TYPE` - Set wave type- `SET_FREQUENCY` - Set frequency- `SET_AMPLITUDE` - Set amplitude- `SET_OFFSET` - Set offset- `SET_NUM_SAMPLES` - Set number of samples- `SET_OUTPUT_FILE` - Set output file- `WAIT` - Wait for specified time- `UNKNOWN` - Unknown command
+**Used by:** scpCommand, scpCommandParser

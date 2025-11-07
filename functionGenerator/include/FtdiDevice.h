@@ -4,29 +4,24 @@
 #include <string>
 #include <iostream>
 
-class FtdiDevice {
+class FtdiDevice
+{
 public:
-    explicit FtdiDevice(const std::string& id)
-        : id(id), openFlag(false) {}
-
-    bool open() {
-        openFlag = true;
-        std::cout << "FTDI device " << id << " opened." << std::endl;
-        return true;
-    }
-
-    void close() {
-        openFlag = false;
-        std::cout << "FTDI device " << id << " closed." << std::endl;
-    }
-
-    bool isOpen() const {
-        return openFlag;
-    }
+    explicit FtdiDevice(const std::string& id);
+    
+    ~FtdiDevice();
+    
+    bool open();
+    
+    void close();
+    
+    bool isOpen() const;
+    
+    std::string getDeviceId() const;
 
 private:
-    std::string id;
-    bool openFlag;
+    std::string id;        // Device identifier
+    bool openFlag;         // Connection status flag
 };
 
-#endif
+#endif // FTDIDEVICE_H
