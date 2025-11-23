@@ -3,11 +3,11 @@
 
 #include <string>
 #include <iostream>
+#include <atomic>
 
 /**
  * Class: scpConfig (CLS-005)
  * Responsibility: Store and manage oscilloscope configuration
- * Association: Used by scpController (1:1)
  */
 class scpConfig
 {
@@ -29,6 +29,8 @@ public:
     bool isTriggerEnabled() const;
     std::string getInputFile() const;
     std::string getOutputFile() const;
+    int getConfigId() const { return configId; }
+    std::string getLabel() const { return label; }
     
     // Load/Save configuration
     bool loadFromFile(const std::string &filename);
@@ -38,6 +40,10 @@ public:
     void displayConfig() const;
 
 private:
+    static std::atomic<int> nextConfigId;
+    
+    int configId;
+    std::string label;
     int sampleRate;           // Samples per second
     int numberOfSamples;      // Total samples to collect
     double triggerLevel;      // Trigger voltage level

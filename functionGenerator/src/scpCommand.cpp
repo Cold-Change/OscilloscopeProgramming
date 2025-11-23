@@ -4,7 +4,14 @@
 #include <thread>
 #include <chrono>
 
-scpCommand::scpCommand(CommandType t) : type(t) {}
+// Initialize static counter
+std::atomic<int> scpCommand::nextCommandId(1);
+
+scpCommand::scpCommand(CommandType t) 
+    : commandId(nextCommandId++), type(t) 
+{
+    label = "[Command-" + std::to_string(commandId) + "] " + commandTypeToString(type);
+}
 
 void scpCommand::setParameter(const std::string &key, const std::string &value)
 {
@@ -36,9 +43,14 @@ std::string scpCommand::getTypeName() const
     return commandTypeToString(type);
 }
 
+std::string scpCommand::getTypeNameWithId() const
+{
+    return "[CmdType-" + std::to_string(getCommandTypeId(type)) + "] " + commandTypeToString(type);
+}
+
 void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
 {
-    std::cout << "\n[scpCommand] Executing: " << getTypeName() << std::endl;
+    std::cout << "\n" << label << " Executing..." << std::endl;
     
     switch (type)
     {
@@ -65,7 +77,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: READ_FILE requires 'filename' parameter" << std::endl;
+                std::cerr << label << " ERROR: READ_FILE requires 'filename' parameter" << std::endl;
             }
             break;
             
@@ -76,7 +88,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: WRITE_FILE requires 'filename' parameter" << std::endl;
+                std::cerr << label << " ERROR: WRITE_FILE requires 'filename' parameter" << std::endl;
             }
             break;
             
@@ -88,7 +100,19 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: COLLECT_SAMPLES requires 'numberOfSamples' parameter" << std::endl;
+                std::cerr << label << " ERROR: COLLECT_SAMPLES requires 'numberOfSamples' parameter" << std::endl;
+            }
+            break;
+        
+        case CommandType::COLLECT_SAMPLES_THREADED:
+            if (scopeCtrl && hasParameter("waitSeconds"))
+            {
+                int waitSeconds = std::stoi(getParameter("waitSeconds"));
+                scopeCtrl->collectSamplesThreaded(waitSeconds);
+            }
+            else
+            {
+                std::cerr << label << " ERROR: COLLECT_SAMPLES_THREADED requires 'waitSeconds' parameter" << std::endl;
             }
             break;
             
@@ -96,13 +120,13 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             if (hasParameter("seconds"))
             {
                 int seconds = std::stoi(getParameter("seconds"));
-                std::cout << "[scpCommand] Waiting for " << seconds << " seconds..." << std::endl;
+                std::cout << label << " Waiting for " << seconds << " seconds..." << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(seconds));
-                std::cout << "[scpCommand] Wait complete" << std::endl;
+                std::cout << label << " Wait complete" << std::endl;
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: WAIT requires 'seconds' parameter" << std::endl;
+                std::cerr << label << " ERROR: WAIT requires 'seconds' parameter" << std::endl;
             }
             break;
         
@@ -114,7 +138,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: Function generator controller not available" << std::endl;
+                std::cerr << label << " ERROR: Function generator controller not available" << std::endl;
             }
             break;
             
@@ -126,7 +150,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: SET_WAVE_TYPE requires 'type' parameter (SINE/SQUARE/TRIANGLE/SAWTOOTH)" << std::endl;
+                std::cerr << label << " ERROR: SET_WAVE_TYPE requires 'type' parameter (SINE/SQUARE/TRIANGLE/SAWTOOTH)" << std::endl;
             }
             break;
             
@@ -138,7 +162,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: SET_FREQUENCY requires 'value' parameter" << std::endl;
+                std::cerr << label << " ERROR: SET_FREQUENCY requires 'value' parameter" << std::endl;
             }
             break;
             
@@ -150,7 +174,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: SET_AMPLITUDE requires 'value' parameter" << std::endl;
+                std::cerr << label << " ERROR: SET_AMPLITUDE requires 'value' parameter" << std::endl;
             }
             break;
             
@@ -162,7 +186,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: SET_OFFSET requires 'value' parameter" << std::endl;
+                std::cerr << label << " ERROR: SET_OFFSET requires 'value' parameter" << std::endl;
             }
             break;
             
@@ -174,7 +198,7 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: SET_NUM_SAMPLES requires 'value' parameter" << std::endl;
+                std::cerr << label << " ERROR: SET_NUM_SAMPLES requires 'value' parameter" << std::endl;
             }
             break;
             
@@ -185,12 +209,12 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
             }
             else
             {
-                std::cerr << "[scpCommand] ERROR: SET_OUTPUT_FILE requires 'filename' parameter" << std::endl;
+                std::cerr << label << " ERROR: SET_OUTPUT_FILE requires 'filename' parameter" << std::endl;
             }
             break;
             
         default:
-            std::cerr << "[scpCommand] ERROR: Unknown command type" << std::endl;
+            std::cerr << label << " ERROR: Unknown command type" << std::endl;
             break;
     }
 }
@@ -205,6 +229,9 @@ bool scpCommand::validate() const
             
         case CommandType::COLLECT_SAMPLES:
             return hasParameter("numberOfSamples");
+        
+        case CommandType::COLLECT_SAMPLES_THREADED:
+            return hasParameter("waitSeconds");
             
         case CommandType::WAIT:
             return hasParameter("seconds");
@@ -235,23 +262,26 @@ bool scpCommand::validate() const
 
 CommandType scpCommand::stringToCommandType(const std::string &str)
 {
-    if (str == "START_SCOPE" || str == "start_scope") return CommandType::START_SCOPE;
-    if (str == "STOP_SCOPE" || str == "stop_scope") return CommandType::STOP_SCOPE;
-    if (str == "START_FGEN" || str == "start_fgen") return CommandType::START_FGEN;
-    if (str == "STOP_FGEN" || str == "stop_fgen") return CommandType::STOP_FGEN;
-    if (str == "READ_FILE" || str == "read_file") return CommandType::READ_FILE;
-    if (str == "WRITE_FILE" || str == "write_file") return CommandType::WRITE_FILE;
-    if (str == "COLLECT_SAMPLES" || str == "collect_samples") return CommandType::COLLECT_SAMPLES;
-    if (str == "WAIT" || str == "wait") return CommandType::WAIT;
+    // Case-insensitive matching with enum values
+    if (str == "START_SCOPE" || str == "start_scope" || str == "0") return CommandType::START_SCOPE;
+    if (str == "STOP_SCOPE" || str == "stop_scope" || str == "1") return CommandType::STOP_SCOPE;
+    if (str == "COLLECT_SAMPLES" || str == "collect_samples" || str == "2") return CommandType::COLLECT_SAMPLES;
+    if (str == "COLLECT_SAMPLES_THREADED" || str == "collect_samples_threaded" || str == "3") 
+        return CommandType::COLLECT_SAMPLES_THREADED;
+    if (str == "READ_FILE" || str == "read_file" || str == "4") return CommandType::READ_FILE;
+    if (str == "WRITE_FILE" || str == "write_file" || str == "5") return CommandType::WRITE_FILE;
     
-    // FUNCTION GENERATOR COMMANDS
-    if (str == "GENERATE_WAVEFORM" || str == "generate_waveform") return CommandType::GENERATE_WAVEFORM;
-    if (str == "SET_WAVE_TYPE" || str == "set_wave_type") return CommandType::SET_WAVE_TYPE;
-    if (str == "SET_FREQUENCY" || str == "set_frequency") return CommandType::SET_FREQUENCY;
-    if (str == "SET_AMPLITUDE" || str == "set_amplitude") return CommandType::SET_AMPLITUDE;
-    if (str == "SET_OFFSET" || str == "set_offset") return CommandType::SET_OFFSET;
-    if (str == "SET_NUM_SAMPLES" || str == "set_num_samples") return CommandType::SET_NUM_SAMPLES;
-    if (str == "SET_OUTPUT_FILE" || str == "set_output_file") return CommandType::SET_OUTPUT_FILE;
+    if (str == "START_FGEN" || str == "start_fgen" || str == "10") return CommandType::START_FGEN;
+    if (str == "STOP_FGEN" || str == "stop_fgen" || str == "11") return CommandType::STOP_FGEN;
+    if (str == "GENERATE_WAVEFORM" || str == "generate_waveform" || str == "12") return CommandType::GENERATE_WAVEFORM;
+    if (str == "SET_WAVE_TYPE" || str == "set_wave_type" || str == "13") return CommandType::SET_WAVE_TYPE;
+    if (str == "SET_FREQUENCY" || str == "set_frequency" || str == "14") return CommandType::SET_FREQUENCY;
+    if (str == "SET_AMPLITUDE" || str == "set_amplitude" || str == "15") return CommandType::SET_AMPLITUDE;
+    if (str == "SET_OFFSET" || str == "set_offset" || str == "16") return CommandType::SET_OFFSET;
+    if (str == "SET_NUM_SAMPLES" || str == "set_num_samples" || str == "17") return CommandType::SET_NUM_SAMPLES;
+    if (str == "SET_OUTPUT_FILE" || str == "set_output_file" || str == "18") return CommandType::SET_OUTPUT_FILE;
+    
+    if (str == "WAIT" || str == "wait" || str == "20") return CommandType::WAIT;
     
     return CommandType::UNKNOWN;
 }
@@ -262,14 +292,13 @@ std::string scpCommand::commandTypeToString(CommandType type)
     {
         case CommandType::START_SCOPE: return "START_SCOPE";
         case CommandType::STOP_SCOPE: return "STOP_SCOPE";
-        case CommandType::START_FGEN: return "START_FGEN";
-        case CommandType::STOP_FGEN: return "STOP_FGEN";
+        case CommandType::COLLECT_SAMPLES: return "COLLECT_SAMPLES";
+        case CommandType::COLLECT_SAMPLES_THREADED: return "COLLECT_SAMPLES_THREADED";
         case CommandType::READ_FILE: return "READ_FILE";
         case CommandType::WRITE_FILE: return "WRITE_FILE";
-        case CommandType::COLLECT_SAMPLES: return "COLLECT_SAMPLES";
-        case CommandType::WAIT: return "WAIT";
         
-        // FUNCTION GENERATOR COMMANDS
+        case CommandType::START_FGEN: return "START_FGEN";
+        case CommandType::STOP_FGEN: return "STOP_FGEN";
         case CommandType::GENERATE_WAVEFORM: return "GENERATE_WAVEFORM";
         case CommandType::SET_WAVE_TYPE: return "SET_WAVE_TYPE";
         case CommandType::SET_FREQUENCY: return "SET_FREQUENCY";
@@ -278,6 +307,13 @@ std::string scpCommand::commandTypeToString(CommandType type)
         case CommandType::SET_NUM_SAMPLES: return "SET_NUM_SAMPLES";
         case CommandType::SET_OUTPUT_FILE: return "SET_OUTPUT_FILE";
         
+        case CommandType::WAIT: return "WAIT";
+        
         default: return "UNKNOWN";
     }
+}
+
+int scpCommand::getCommandTypeId(CommandType type)
+{
+    return static_cast<int>(type);
 }
