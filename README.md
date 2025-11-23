@@ -13,7 +13,7 @@ Command-line application simulating an oscilloscope and function generator.
 
 ```bash
 cd functionGenerator
-g++ -std=c++11 -Iinclude src/*.cpp -o oscilloscope
+g++ -std=c++17 -O2 -pthread -Iinclude src/*.cpp -o oscilloscope
 ./oscilloscope --help
 ```
 

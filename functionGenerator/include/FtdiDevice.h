@@ -3,7 +3,12 @@
 
 #include <string>
 #include <iostream>
+#include <atomic>
 
+/**
+ * Class: FtdiDevice (CLS-001)
+ * Responsibility: Manage FTDI device connection lifecycle
+ */
 class FtdiDevice
 {
 public:
@@ -18,9 +23,17 @@ public:
     bool isOpen() const;
     
     std::string getDeviceId() const;
+    
+    int getInstanceId() const { return instanceId; }
+    
+    std::string getLabel() const { return label; }
 
 private:
+    static std::atomic<int> nextInstanceId;
+    
+    int instanceId;
     std::string id;        // Device identifier
+    std::string label;     // Human-readable label
     bool openFlag;         // Connection status flag
 };
 
