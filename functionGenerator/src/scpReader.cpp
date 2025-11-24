@@ -2,13 +2,29 @@
 #include "scpConfig.h"
 
 scpReader::scpReader(FtdiDevice &device) 
-    : dev(device), bufferSize(4096) {}
+    : dev(device), bufferSize(4096), invertPins(false) {}
 
+<<<<<<< Updated upstream
+=======
+void scpReader::setInvertPins(bool invert)
+{
+    invertPins = invert;
+    std::cout << "[scpReader] Pin inversion " << (invertPins ? "ENABLED" : "DISABLED") << std::endl;
+    std::cout << "[scpReader] Reading logic: " << (invertPins ? "0=HIGH, 1=LOW" : "0=LOW, 1=HIGH") << std::endl;
+}
+
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
 std::vector<uint8_t> scpReader::readSamples(int numberOfSamples)
 {
     if (!dev.isOpen())
     {
+<<<<<<< Updated upstream
         std::cerr << "ERROR: Read device not open." << std::endl;
+=======
+        std::cerr << "[scpReader] ERROR: Read device not open." << std::endl;
+>>>>>>> Stashed changes
         return {};
     }
 
@@ -39,15 +55,36 @@ std::vector<uint8_t> scpReader::readSamples(int numberOfSamples)
         return {};
     }
     
+<<<<<<< Updated upstream
     // Resize to actual bytes read
     data.resize(bytesRead);
     
     std::cout << "[scpReader] " << bytesRead << " samples read from FTDI device" << std::endl;
+=======
+    // INVERT pins if pull-ups are active
+    if (invertPins)
+    {
+        for (size_t i = 0; i < bytesRead; i++)
+        {
+            data[i] = ~data[i];  // Bitwise NOT: 0xFF becomes 0x00, etc.
+        }
+    }
+    
+    // Resize to actual bytes read
+    data.resize(bytesRead);
+    
+    std::cout << "[scpReader] " << bytesRead << " samples read from FTDI device";
+    if (invertPins) std::cout << " (inverted)";
+    std::cout << std::endl;
+>>>>>>> Stashed changes
     
     return data;
 }
 
+<<<<<<< Updated upstream
 // NEW: Set baud rate for reading frequency control
+=======
+>>>>>>> Stashed changes
 void scpReader::setBaudRate(int baudRate)
 {
     if (!dev.isOpen())
@@ -76,19 +113,23 @@ void scpReader::setBaudRate(int baudRate)
     }
 }
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 std::vector<uint8_t> scpReader::readData(const std::string &filename)
 {
     if (!dev.isOpen())
     {
-        std::cerr << "ERROR: Read device not open." << std::endl;
+        std::cerr << "[scpReader] ERROR: Read device not open." << std::endl;
         return {};
     }
 
     std::ifstream in(filename, std::ios::binary);
     if (!in)
     {
-        std::cerr << "ERROR: Cannot open input file " << filename << std::endl;
+        std::cerr << "[scpReader] ERROR: Cannot open input file " << filename << std::endl;
         return {};
     }
 

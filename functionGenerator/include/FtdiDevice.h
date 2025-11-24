@@ -28,9 +28,20 @@ public:
     int getInstanceId() const { return instanceId; }
     
     std::string getLabel() const { return label; }
+<<<<<<< Updated upstream
     
     // NEW: Get actual FTDI handle for read/write operations
     FT_HANDLE getHandle() const { return ftHandle; }
+=======
+<<<<<<< Updated upstream
+=======
+    void diagnosePullUps();
+    void testPinControl();
+    
+    // NEW: Get actual FTDI handle for read/write operations
+    FT_HANDLE getHandle() const { return ftHandle; }
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
 private:
     static std::atomic<int> nextInstanceId;
