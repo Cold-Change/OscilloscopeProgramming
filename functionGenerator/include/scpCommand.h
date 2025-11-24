@@ -34,9 +34,14 @@ enum class CommandType
     SET_OFFSET = 16,
     SET_NUM_SAMPLES = 17,
     SET_OUTPUT_FILE = 18,
+    SET_SAMPLE_FREQUENCY = 19,
+    SET_BAUD_RATE = 20,
     
+    // NEW: Test data generation
+    GENERATE_TEST_DATA = 21,
+
     // Utility commands
-    WAIT = 20,
+    WAIT = 22,
     
     UNKNOWN = 99
 };
