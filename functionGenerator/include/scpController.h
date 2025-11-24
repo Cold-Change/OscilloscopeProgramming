@@ -6,24 +6,17 @@
 #include <cstdint>
 #include <mutex>
 #include <memory>
+#include <map>
+#include <algorithm>
 #include "scpReader.h"
 #include "scpWriter.h"
 #include "scpConfig.h"
 
-// Forward declaration to avoid circular dependency
+// Forward declaration
 namespace scp {
     class DataCollector;
 }
 
-/**
- * Class: scpController (CLS-004)
- * Responsibility: Orchestrate oscilloscope operations with multi-threading support
- * Associations: 
- *   - Manages scpReader (1:1)
- *   - Manages scpWriter (1:1)
- *   - Configures scpConfig (1:1)
- *   - Uses scpDataCollector (1:0..1) for threaded collection
- */
 class scpController
 {
 public:
@@ -34,10 +27,8 @@ public:
     void start();
     void stop();
     
-    // Data collection - legacy single-threaded
+    // Data collection
     void collectSamples(int numberOfSamples);
-    
-    // NEW: Multi-threaded data collection with wait time
     void collectSamplesThreaded(int durationSeconds);
     
     // Status methods
@@ -47,7 +38,14 @@ public:
     
     // File operations
     void readFromFile(const std::string &filename);
-    void writeToFile(const std::string &filename);
+    void writeToFile(const std::string &filename = "");
+    
+    // Frequency control
+    void setSamplingFrequency(double freqHz);
+    void setBaudRate(int baud);
+    
+    // NEW: Data visualization
+    void displayDataPreview(int numSamples = 64) const;
 
 private:
     scpReader *reader;
@@ -57,9 +55,10 @@ private:
     int collectedSamples;
     std::vector<uint8_t> dataBuffer;
     
-    // Thread synchronization
     std::mutex coutMutex;
     std::unique_ptr<scp::DataCollector> dataCollector;
+    
+    static const std::string DEFAULT_OUTPUT_FILE;
 };
 
-#endif // SCPCONTROLLER_H
+#endif

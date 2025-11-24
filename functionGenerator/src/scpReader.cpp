@@ -1,7 +1,81 @@
 #include "scpReader.h"
+#include "scpConfig.h"
 
 scpReader::scpReader(FtdiDevice &device) 
     : dev(device), bufferSize(4096) {}
+
+std::vector<uint8_t> scpReader::readSamples(int numberOfSamples)
+{
+    if (!dev.isOpen())
+    {
+        std::cerr << "ERROR: Read device not open." << std::endl;
+        return {};
+    }
+
+    std::vector<uint8_t> data(numberOfSamples);
+    DWORD bytesRead = 0;
+    
+    FT_HANDLE ftHandle = dev.getHandle();
+    
+    if (ftHandle == nullptr)
+    {
+        std::cerr << "[scpReader] ERROR: Invalid FTDI handle" << std::endl;
+        return {};
+    }
+    
+    // Purge RX buffer before reading
+    FT_STATUS ftStatus = FT_Purge(ftHandle, FT_PURGE_RX);
+    if (ftStatus != FT_OK)
+    {
+        std::cerr << "[scpReader] WARNING: Failed to purge RX buffer (code: " << ftStatus << ")" << std::endl;
+    }
+    
+    // Read data from FTDI device
+    ftStatus = FT_Read(ftHandle, data.data(), numberOfSamples, &bytesRead);
+    
+    if (ftStatus != FT_OK)
+    {
+        std::cerr << "[scpReader] ERROR: FT_Read failed with status " << ftStatus << std::endl;
+        return {};
+    }
+    
+    // Resize to actual bytes read
+    data.resize(bytesRead);
+    
+    std::cout << "[scpReader] " << bytesRead << " samples read from FTDI device" << std::endl;
+    
+    return data;
+}
+
+// NEW: Set baud rate for reading frequency control
+void scpReader::setBaudRate(int baudRate)
+{
+    if (!dev.isOpen())
+    {
+        std::cerr << "[scpReader] ERROR: Device not open" << std::endl;
+        return;
+    }
+    
+    FT_HANDLE ftHandle = dev.getHandle();
+    if (ftHandle == nullptr)
+    {
+        std::cerr << "[scpReader] ERROR: Invalid FTDI handle" << std::endl;
+        return;
+    }
+    
+    FT_STATUS ftStatus = FT_SetBaudRate(ftHandle, baudRate);
+    
+    if (ftStatus == FT_OK)
+    {
+        std::cout << "[scpReader] ✓ Baud rate set to " << baudRate << " baud" << std::endl;
+        std::cout << "[scpReader] ✓ Effective sampling: " << (baudRate * 16) << " Hz" << std::endl;
+    }
+    else
+    {
+        std::cerr << "[scpReader] ERROR: Failed to set baud rate (code: " << ftStatus << ")" << std::endl;
+    }
+}
+
 
 std::vector<uint8_t> scpReader::readData(const std::string &filename)
 {
@@ -23,28 +97,6 @@ std::vector<uint8_t> scpReader::readData(const std::string &filename)
         std::istreambuf_iterator<char>());
 
     std::cout << "[scpReader] " << data.size() << " bytes read from " << filename << std::endl;
-    return data;
-}
-
-std::vector<uint8_t> scpReader::readSamples(int numberOfSamples)
-{
-    if (!dev.isOpen())
-    {
-        std::cerr << "ERROR: Read device not open." << std::endl;
-        return {};
-    }
-
-    // Simulate reading numberOfSamples from the FTDI device
-    std::vector<uint8_t> data(numberOfSamples);
-    
-    // In real implementation, this would read from actual hardware
-    // For now, we'll fill with simulated data
-    for (int i = 0; i < numberOfSamples; ++i)
-    {
-        data[i] = static_cast<uint8_t>(i % 256);
-    }
-
-    std::cout << "[scpReader] " << numberOfSamples << " samples collected from device" << std::endl;
     return data;
 }
 

@@ -212,7 +212,44 @@ void scpCommand::execute(scpController *scopeCtrl, fgenController *fgenCtrl)
                 std::cerr << label << " ERROR: SET_OUTPUT_FILE requires 'filename' parameter" << std::endl;
             }
             break;
-            
+        
+        case CommandType::SET_SAMPLE_FREQUENCY:
+            if (scopeCtrl && hasParameter("frequency"))
+            {
+                double freq = std::stod(getParameter("frequency"));
+                // Implement in controller
+                scopeCtrl->setSamplingFrequency(freq);
+            }
+            else
+            {
+                std::cerr << label << " ERROR: SET_SAMPLE_FREQUENCY requires 'frequency' parameter (Hz)" << std::endl;
+            }
+            break;
+
+        case CommandType::SET_BAUD_RATE:
+            if (scopeCtrl && hasParameter("baudrate"))
+            {
+                int baud = std::stoi(getParameter("baudrate"));
+                scopeCtrl->setBaudRate(baud);
+            }
+            else
+            {
+                std::cerr << label << " ERROR: SET_BAUD_RATE requires 'baudrate' parameter" << std::endl;
+            }
+            break;
+        case CommandType::GENERATE_TEST_DATA:
+            if (fgenCtrl && hasParameter("type"))
+            {
+                std::string dataType = getParameter("type");
+                fgenCtrl->setWaveType(dataType);
+                fgenCtrl->generateAndOutput();
+            }
+            else
+            {
+                std::cerr << label << " ERROR: GENERATE_TEST_DATA requires 'type' parameter (SINE/SQUARE/TRIANGLE/SAWTOOTH)" << std::endl;
+            }
+            break;
+
         default:
             std::cerr << label << " ERROR: Unknown command type" << std::endl;
             break;
@@ -224,8 +261,10 @@ bool scpCommand::validate() const
     switch (type)
     {
         case CommandType::READ_FILE:
+            return hasParameter("filename");  // filename REQUIRED for reading
+            
         case CommandType::WRITE_FILE:
-            return hasParameter("filename");
+            return true;  // CHANGED: filename is OPTIONAL for writing (uses default)
             
         case CommandType::COLLECT_SAMPLES:
             return hasParameter("numberOfSamples");
@@ -247,6 +286,12 @@ bool scpCommand::validate() const
             
         case CommandType::SET_OUTPUT_FILE:
             return hasParameter("filename");
+        
+        case CommandType::SET_SAMPLE_FREQUENCY:
+            return hasParameter("frequency");
+            
+        case CommandType::SET_BAUD_RATE:
+            return hasParameter("baudrate");
             
         case CommandType::START_SCOPE:
         case CommandType::STOP_SCOPE:
@@ -281,8 +326,11 @@ CommandType scpCommand::stringToCommandType(const std::string &str)
     if (str == "SET_NUM_SAMPLES" || str == "set_num_samples" || str == "17") return CommandType::SET_NUM_SAMPLES;
     if (str == "SET_OUTPUT_FILE" || str == "set_output_file" || str == "18") return CommandType::SET_OUTPUT_FILE;
     
-    if (str == "WAIT" || str == "wait" || str == "20") return CommandType::WAIT;
-    
+    if (str == "WAIT" || str == "wait" || str == "22") return CommandType::WAIT;
+    if (str == "SET_SAMPLE_FREQUENCY" || str == "set_sample_frequency" || str == "19") return CommandType::SET_SAMPLE_FREQUENCY;
+    if (str == "SET_BAUD_RATE" || str == "set_baud_rate" || str == "20") return CommandType::SET_BAUD_RATE;
+    if (str == "GENERATE_TEST_DATA" || str == "generate_test_data" || str == "21") return CommandType::GENERATE_TEST_DATA;
+
     return CommandType::UNKNOWN;
 }
 
@@ -308,6 +356,9 @@ std::string scpCommand::commandTypeToString(CommandType type)
         case CommandType::SET_OUTPUT_FILE: return "SET_OUTPUT_FILE";
         
         case CommandType::WAIT: return "WAIT";
+        case CommandType::SET_SAMPLE_FREQUENCY: return "SET_SAMPLE_FREQUENCY";
+        case CommandType::SET_BAUD_RATE: return "SET_BAUD_RATE";
+        case CommandType::GENERATE_TEST_DATA: return "GENERATE_TEST_DATA";
         
         default: return "UNKNOWN";
     }

@@ -22,6 +22,12 @@ public:
     void setInputFile(const std::string &file);
     void setOutputFile(const std::string &file);
     
+    // NEW: Frequency control methods
+    void setSamplingFrequency(double freqHz);  // Set frequency in Hz
+    void setBaudRate(int baud);                // Set baud rate for bit bang
+    double getEffectiveFrequency() const;      // Calculate effective frequency
+    int getBaudRate() const;                   // Get current baud rate
+    
     // Getters
     int getSampleRate() const;
     int getNumberOfSamples() const;
@@ -50,6 +56,10 @@ private:
     bool triggerEnabled;      // Enable/disable trigger
     std::string inputFile;    // Input file path
     std::string outputFile;   // Output file path
+    
+    // NEW: Frequency control
+    int baudRate;             // Baud rate for bit bang mode
+    double samplingFrequency; // Desired sampling frequency in Hz
 };
 
 #endif // SCPCONFIG_H
